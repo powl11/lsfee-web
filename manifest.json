@@ -3,7 +3,7 @@
   "short_name": "LSFEE",
   "start_url": "/lsfee-web/",
   "display": "standalone",
-  "background_color": "#001a33",
+  "background_color": "#ffffff",
   "theme_color": "#001a33",
   "orientation": "portrait",
  "icons": [
