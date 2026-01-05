@@ -1,119 +1,318 @@
-import { useState } from 'react';
-import { IoHome, IoRocket, IoPeople, IoCalendar, IoLocationSharp } from "react-icons/io5";
+import { useState, useEffect } from 'react';
+import { 
+  IoHome, IoHomeOutline, IoPeople, IoPeopleOutline, IoInformationCircle, IoInformationCircleOutline,
+  IoCalendar, IoLocationSharp, IoArrowForward, IoTimeOutline, IoChevronBack, IoMail,
+  IoCloudDownloadOutline, IoGameController
+} from "react-icons/io5";
 import './index.css';
+import TetrisGame from './Tetris';
 
-// DATELE APLICATIEI
-const CONFIG = {
-  numeApp: "LSFEE Info",
-  date: {
-    noutati: [
-      { id: 1, titlu: "Cafeaua Electrizantă", data: "8-12 Dec", loc: "Holul Electro", desc: "Te așteptăm la cafea și discuții!" },
-      { id: 2, titlu: "Seara de Colinde", data: "16 Dec", loc: "Facultate", desc: "Mergem să colindăm profesorii." },
-    ],
-    proiecte: [
-      { id: 'p1', titlu: "Descoperă Electro", perioada: "Octombrie", desc: "Proiect dedicat bobocilor pentru integrare.", img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500&q=80" },
-      { id: 'p2', titlu: "Cupa Poli", perioada: "Semestrul 2", desc: "Competiție sportivă între facultăți.", img: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=500&q=80" },
-      { id: 'p3', titlu: "Team Building", perioada: "Semestrial", desc: "Formarea echipei și distracție la munte.", img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=500&q=80" },
-    ],
-    echipa: [
-      { id: 1, nume: "Podeanu Denis", rol: "Președinte", an: "III EE", avatar: "https://ui-avatars.com/api/?name=Podeanu+Denis&background=004d99&color=fff" },
-      { id: 2, nume: "Golîmba Robert", rol: "Vicepreședinte", an: "III ET", avatar: "https://ui-avatars.com/api/?name=Golimba+Robert&background=004d99&color=fff" },
-      { id: 3, nume: "Haicu Andreea", rol: "VP Interne", an: "IV EE", avatar: "https://ui-avatars.com/api/?name=Haicu+Andreea&background=004d99&color=fff" },
-      { id: 4, nume: "Vasile Flavius", rol: "Secretar", an: "Master", avatar: "https://ui-avatars.com/api/?name=Vasile+Flavius&background=004d99&color=fff" },
-    ]
+// IMPORTĂM DATELE DIN FIȘIERUL JSON (pe care îl vor edita colegii)
+import CONFIG from './data.json'; 
+
+// --- COMPONENTE UI ---
+const CardNoutate = ({ item }) => (
+  <div className="card-noutate fade-in">
+    <div className="card-accent"></div>
+    <div className="card-content">
+      <h3 className="card-titlu">{item.titlu}</h3>
+      <div className="badge-data">
+        <IoCalendar size={12} style={{marginRight: 4}} />
+        <span>{item.data}</span>
+      </div>
+      <p className="text-loc">{item.loc}</p>
+      <p className="card-descriere">{item.info}</p>
+    </div>
+  </div>
+);
+
+const CardMembru = ({ membru }) => (
+  <div className="membru-card fade-in">
+    <img src={membru.poza} alt={membru.nume} className="membru-poza" />
+    <div className="membru-info">
+      <h4 className="membru-nume">{membru.nume}</h4>
+      <p className="membru-rol">{membru.rol}</p>
+      <div className="separator" />
+      <p className="membru-detalii">Anul {membru.an}</p>
+      {membru.email && <p className="membru-email">{membru.email}</p>}
+    </div>
+  </div>
+);
+
+const CardProiect = ({ proiect, onClick }) => (
+  <div className="proiect-card fade-in" onClick={onClick}>
+    <img src={proiect.poza} alt={proiect.titlu} className="proiect-imagine" />
+    <div className="proiect-content">
+      <h3 className="proiect-titlu">{proiect.titlu}</h3>
+      <p className="proiect-descriere">{proiect.descriere}</p>
+      <div className="read-more-row">
+        <span>Află mai multe</span>
+        <IoArrowForward color="#00ccff" />
+      </div>
+    </div>
+  </div>
+);
+
+const UpdateModal = ({ onUpdate, version }) => (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <div className="modal-icon-box">
+        <IoCloudDownloadOutline size={40} color="white" />
+      </div>
+      <h2 className="modal-title">Actualizare Disponibilă!</h2>
+      <p className="modal-text">
+        Avem noutăți! (v.{version})<br/>
+        Apasă pentru a actualiza conținutul.
+      </p>
+      <button className="modal-button" onClick={onUpdate}>
+        ACTUALIZEAZĂ ACUM
+      </button>
+    </div>
+  </div>
+);
+
+// --- ECRANE ---
+const EcranAcasa = () => (
+  <div className="scroll-container">
+    <div className="welcome-box fade-in">
+       <div style={{flex: 1}}>
+         <h1 className="titlu-mare">{CONFIG.texte.acasa.titlu}</h1>
+         <p className="subtitlu">{CONFIG.texte.acasa.descriere}</p>
+       </div>
+       {/* CALEA PENTRU PIKA */}
+       <img src="/lsfee-web/pika.png" className="pika-img" alt="Pika" onError={(e) => e.target.src = 'pika.png'} />
+    </div>
+    
+    <h2 className="sectiune-titlu fade-in-delay">📅 Urmează în LSFEE</h2>
+
+    {CONFIG.texte.acasa.noutati.map((item) => (
+      <CardNoutate key={item.id} item={item} /> 
+    ))}
+  </div>
+);
+
+const EcranProiectDetaliat = ({ proiect, onBack }) => (
+  <div className="scroll-container detail-view">
+    <img src={proiect.poza} className="proiect-detail-image" />
+    
+    <div className="proiect-detail-container">
+      <button onClick={onBack} className="back-button-detail">
+        <IoChevronBack size={30} color="white" />
+      </button>
+
+      <h1 className="proiect-detail-title">{proiect.titlu}</h1>
+      
+      <div className="badge-data">
+        <IoTimeOutline size={14} style={{marginRight: 5}} />
+        <span>{proiect.perioada}</span>
+      </div>
+
+      <div className="divider"></div>
+
+      <h3 className="sectiune-subtitlu">Despre Proiect</h3>
+      <p className="paragraf">{proiect.descriere}</p>
+
+      <h3 className="sectiune-subtitlu">Detalii & Obiective</h3>
+      <p className="paragraf">{proiect.detalii}</p>
+    </div>
+  </div>
+);
+
+const EcranDespre = ({ onSecretClick }) => {
+  const [proiectSelectat, setProiectSelectat] = useState(null);
+
+  useEffect(() => { window.scrollTo(0, 0); }, [proiectSelectat]);
+
+  if (proiectSelectat) {
+    return <EcranProiectDetaliat proiect={proiectSelectat} onBack={() => setProiectSelectat(null)} />;
   }
+
+  return (
+    <div className="scroll-container">
+      <div className="fade-in">
+        <img src={CONFIG.imagini.bannerDespre} className="banner-image" />
+      </div>
+      
+      <div className="card-simplu fade-in-delay">
+        <h2 className="titlu-mediu">{CONFIG.texte.despre.titlu}</h2>
+        <p className="paragraf">{CONFIG.texte.despre.descriere}</p>
+      </div>
+      
+      <div className="row-container fade-in-delay-2">
+        <div className="info-card">
+          <div className="icon-bula">
+            <IoLocationSharp size={24} color="#00ccff" />
+          </div>
+          <p className="info-box-text">Sala A022</p>
+        </div>
+        <div className="info-card">
+          <div className="icon-bula">
+            <IoMail size={24} color="#00ccff" />
+          </div>
+          <p className="info-box-text">lsfee.upt@gmail.com</p>
+        </div>
+      </div>
+
+      <h2 className="sectiune-titlu fade-in-delay-2" style={{marginTop: '30px'}}>🚀 Proiectele Noastre</h2>
+      
+      {CONFIG.texte.despre.proiecte.map((proiect) => (
+        <CardProiect 
+          key={proiect.id} 
+          proiect={proiect} 
+          onClick={() => setProiectSelectat(proiect)}
+        />
+      ))}
+
+      <div style={{marginTop: '60px', marginBottom: '20px', display: 'flex', justifyContent: 'center', opacity: 0.1}}>
+        <button onClick={onSecretClick} style={{background: 'none', border: 'none', padding: '20px'}}>
+           <IoGameController size={30} color="#001a33" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
-function App() {
-  const [tab, setTab] = useState('Acasa');
+const EcranEchipa = () => {
+  const [departamentSelectat, setDepartamentSelectat] = useState(null);
+
+  if (departamentSelectat) {
+    return (
+      <div className="scroll-container">
+        <div className="fade-in" style={{display: 'flex', alignItems: 'center', marginBottom: '20px'}}>
+          <button onClick={() => setDepartamentSelectat(null)} className="back-button-simple">
+            <IoChevronBack size={32} color="#001a33" />
+          </button>
+          <h2 className="titlu-pagina">{departamentSelectat.numeDepartament}</h2>
+        </div>
+
+        <p className="descriere-dept fade-in-delay">{departamentSelectat.descriere}</p>
+        
+        {departamentSelectat.membri.map((membru, index) => (
+          <CardMembru key={index} membru={membru} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="scroll-container">
+      <div className="fade-in">
+        <h1 className="titlu-mare">Structura LSFEE</h1>
+        <p className="paragraf-center">Organigrama echipei noastre.</p>
+      </div>
+
+      {CONFIG.texte.echipa.map((dept, index) => (
+        <div key={dept.id} className="dept-card fade-in" onClick={() => setDepartamentSelectat(dept)} style={{animationDelay: `${index * 0.1}s`}}>
+          <div className="dept-icon-box">
+             <IoPeople size={24} color="white" />
+          </div>
+          <div style={{flex: 1}}>
+            <h3 className="dept-text">{dept.numeDepartament}</h3>
+            <p className="dept-sub-text">{dept.membri.length} membri activi</p>
+          </div>
+          <div className="arrow-box">
+             <IoArrowForward size={16} color="#00ccff" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// --- APP PRINCIPAL ---
+export default function App() {
+  const [paginaCurenta, setPaginaCurenta] = useState('Acasa');
+  const [newVersionAvailable, setNewVersionAvailable] = useState(null);
+  const [showTetris, setShowTetris] = useState(false);
+
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        // Punem un timestamp la request ca sa nu ia din cache-ul browserului vechiul json
+        const res = await fetch('/lsfee-web/version.json?t=' + Date.now());
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverVer = data.version;
+        const localVer = localStorage.getItem('app_version');
+
+        // Daca versiunea de pe net e diferita de cea din telefon
+        if (localVer && localVer !== String(serverVer)) {
+          setNewVersionAvailable(serverVer);
+        } else {
+          // Daca e prima data sau e la zi, salvam versiunea curenta
+          localStorage.setItem('app_version', serverVer);
+        }
+      } catch (e) {
+        console.log("Offline sau eroare verificare.");
+      }
+    };
+    checkVersion();
+    window.addEventListener('focus', checkVersion);
+    return () => window.removeEventListener('focus', checkVersion);
+  }, []);
+
+  const performUpdate = async () => {
+    if (newVersionAvailable) {
+      localStorage.setItem('app_version', newVersionAvailable);
+      if ('caches' in window) {
+         try {
+           const names = await caches.keys();
+           await Promise.all(names.map(name => caches.delete(name)));
+         } catch(e) {}
+      }
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="app-container">
-      {/* HEADER */}
-      <header className="top-bar">
-        <h1>{CONFIG.numeApp}</h1>
-      </header>
+      {showTetris && <TetrisGame onBack={() => setShowTetris(false)} />}
 
-      {/* CONTINUT */}
-      <main className="content">
-        {tab === 'Acasa' && (
-          <div className="animate-fade">
-            <div className="welcome-box">
-              <h2>Salutare!</h2>
-              <p>Uite ce se întâmplă în LSFEE.</p>
+      <div style={{display: showTetris ? 'none' : 'flex', flexDirection: 'column', height: '100%'}}>
+          
+          {newVersionAvailable && (
+            <UpdateModal version={newVersionAvailable} onUpdate={performUpdate} />
+          )}
+
+          <div className="top-bar">
+            <span className="top-bar-text">{CONFIG.numeApp}</span>
+          </div>
+
+          <div className="main-content">
+            {paginaCurenta === 'Acasa' && <EcranAcasa />}
+            {paginaCurenta === 'Despre' && <EcranDespre onSecretClick={() => setShowTetris(true)} />}
+            {paginaCurenta === 'Echipa' && <EcranEchipa />}
+          </div>
+
+          <div className="nav-bar-container">
+            <div className="nav-bar">
+              <TabButton 
+                nume="Acasă" 
+                IconActiv={IoHome} IconInactiv={IoHomeOutline} 
+                set={setPaginaCurenta} activ={paginaCurenta === 'Acasa'} tinta="Acasa" 
+              />
+              <TabButton 
+                nume="Echipă" 
+                IconActiv={IoPeople} IconInactiv={IoPeopleOutline} 
+                set={setPaginaCurenta} activ={paginaCurenta === 'Echipa'} tinta="Echipa" 
+              />
+              <TabButton 
+                nume="Despre" 
+                IconActiv={IoInformationCircle} IconInactiv={IoInformationCircleOutline} 
+                set={setPaginaCurenta} activ={paginaCurenta === 'Despre'} tinta="Despre" 
+              />
             </div>
-            <h3 className="section-title">📢 Noutăți</h3>
-            {CONFIG.date.noutati.map(item => (
-              <div key={item.id} className="card">
-                <div className="card-header">
-                  <IoCalendar /> <span>{item.data}</span>
-                </div>
-                <div className="card-body">
-                  <h4>{item.titlu}</h4>
-                  <p className="loc"><IoLocationSharp /> {item.loc}</p>
-                  <p className="desc">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-            <div style={{height: '20px'}}></div>
           </div>
-        )}
-
-        {tab === 'Proiecte' && (
-          <div className="animate-fade">
-            <h2 className="page-title">Proiectele Noastre</h2>
-            <p className="page-sub">Activitățile prin care ne remarcăm.</p>
-            {CONFIG.date.proiecte.map(item => (
-              <div key={item.id} className="proiect-card">
-                <img src={item.img} alt={item.titlu} />
-                <div className="proiect-info">
-                  <h4>{item.titlu}</h4>
-                  <span className="badge">{item.perioada}</span>
-                  <p>{item.desc}</p>
-                </div>
-              </div>
-            ))}
-             <div style={{height: '20px'}}></div>
-          </div>
-        )}
-
-        {tab === 'Echipa' && (
-          <div className="animate-fade">
-            <h2 className="page-title">Echipa LSFEE</h2>
-            <p className="page-sub">Oamenii din spatele proiectelor.</p>
-            <div className="membri-list">
-              {CONFIG.date.echipa.map(item => (
-                <div key={item.id} className="membru-row">
-                  <img src={item.avatar} alt={item.nume} />
-                  <div>
-                    <h4>{item.nume}</h4>
-                    <p>{item.rol} • Anul {item.an}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-             <div style={{height: '20px'}}></div>
-          </div>
-        )}
-      </main>
-
-      {/* NAVBAR JOS */}
-      <nav className="nav-bar">
-        <button onClick={() => setTab('Acasa')} className={tab === 'Acasa' ? 'active' : ''}>
-          <IoHome size={24} />
-          <span>Acasă</span>
-        </button>
-        <button onClick={() => setTab('Proiecte')} className={tab === 'Proiecte' ? 'active' : ''}>
-          <IoRocket size={24} />
-          <span>Proiecte</span>
-        </button>
-        <button onClick={() => setTab('Echipa')} className={tab === 'Echipa' ? 'active' : ''}>
-          <IoPeople size={24} />
-          <span>Echipa</span>
-        </button>
-      </nav>
+      </div>
     </div>
   );
 }
 
-export default App;
+const TabButton = ({ nume, IconActiv, IconInactiv, set, activ, tinta }) => (
+  <button onClick={() => set(tinta)} className={`nav-item ${activ ? 'active' : ''}`}>
+    <div className={`icon-container ${activ ? 'activ' : ''}`}>
+      {activ ? <IconActiv size={26} color="#00ccff" /> : <IconInactiv size={26} color="#8899a6" />}
+    </div>
+    <span className="nav-text" style={{color: activ ? '#00ccff' : '#8899a6'}}>{nume}</span>
+  </button>
+);
