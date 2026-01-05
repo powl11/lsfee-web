@@ -34,7 +34,7 @@
         },
         {
           "id": "p3",
-          "titlu": "Sesiunea de Comunicări",
+          "titlu": "Sesiunea de Comunicări Științifice Studențești",
           "descriere": "Oportunitate academică de prestigiu pentru studenți.",
           "detalii": "Studenții prezintă o lucrare științifică (teoretică și practică).",
           "perioada": "Luna Mai",
@@ -67,4 +67,5 @@
       }
     ]
   }
+
 }
