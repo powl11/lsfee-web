@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { 
   IoHome, IoHomeOutline, IoPeople, IoPeopleOutline, IoInformationCircle, IoInformationCircleOutline,
   IoCalendar, IoLocationSharp, IoArrowForward, IoTimeOutline, IoChevronBack, IoMail,
-  IoCloudDownloadOutline, IoGameController
+  IoCloudDownloadOutline
 } from "react-icons/io5";
 import './index.css';
-import TetrisGame from './Tetris';
 
-// IMPORTAM DATELE CA SA FIE USOR DE MODIFICAT DIN JSON
+// IMPORTAM DATELE DIN JSON
 import CONFIG from './data.json'; 
 
 // --- COMPONENTE UI ---
@@ -117,7 +116,7 @@ const EcranProiectDetaliat = ({ proiect, onBack }) => (
   </div>
 );
 
-const EcranDespre = ({ onSecretClick }) => {
+const EcranDespre = () => {
   const [proiectSelectat, setProiectSelectat] = useState(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, [proiectSelectat]);
@@ -161,12 +160,6 @@ const EcranDespre = ({ onSecretClick }) => {
           onClick={() => setProiectSelectat(proiect)}
         />
       ))}
-
-      <div style={{marginTop: '60px', marginBottom: '20px', display: 'flex', justifyContent: 'center', opacity: 0.1}}>
-        <button onClick={onSecretClick} style={{background: 'none', border: 'none', padding: '20px'}}>
-           <IoGameController size={30} color="#001a33" />
-        </button>
-      </div>
     </div>
   );
 };
@@ -218,13 +211,12 @@ const EcranEchipa = () => {
   );
 };
 
-// --- APP PRINCIPAL CU UPDATE AUTOMAT ---
+// --- APP PRINCIPAL ---
 export default function App() {
   const [paginaCurenta, setPaginaCurenta] = useState('Acasa');
-  const [newVersionAvailable, setNewVersionAvailable] = useState(false); // Doar true/false
-  const [showTetris, setShowTetris] = useState(false);
+  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
 
-  // Verificare automata la pornire si cand revii pe pagina
+  // Verificare automata update
   useEffect(() => {
     const checkVersion = async () => {
       try {
@@ -236,30 +228,25 @@ export default function App() {
 
         if (localVer && localVer !== serverVer) {
           setNewVersionAvailable(true);
-          // Nu salvam inca, doar aratam modala
         } else {
-          // E prima data sau e la zi
           if (!localVer) localStorage.setItem('app_version', serverVer);
         }
       } catch (e) {
-        console.log("Eroare verificare versiune (offline?)");
+        console.log("Offline sau eroare verificare.");
       }
     };
-
     checkVersion();
     window.addEventListener('focus', checkVersion);
     return () => window.removeEventListener('focus', checkVersion);
   }, []);
 
   const performUpdate = async () => {
-    // Luam versiunea noua "pe curat"
     try {
         const res = await fetch('/lsfee-web/version.json?t=' + Date.now());
         const data = await res.json();
         localStorage.setItem('app_version', String(data.version));
     } catch(e) {}
 
-    // Stergem cache-ul si reincarcam
     if ('caches' in window) {
        try {
          const names = await caches.keys();
@@ -271,43 +258,39 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {showTetris && <TetrisGame onBack={() => setShowTetris(false)} />}
+      
+      {newVersionAvailable && (
+        <UpdateModal onUpdate={performUpdate} />
+      )}
 
-      <div style={{display: showTetris ? 'none' : 'flex', flexDirection: 'column', height: '100%'}}>
-          
-          {newVersionAvailable && (
-            <UpdateModal onUpdate={performUpdate} />
-          )}
+      <div className="top-bar">
+        <span className="top-bar-text">{CONFIG.numeApp}</span>
+      </div>
 
-          <div className="top-bar">
-            <span className="top-bar-text">{CONFIG.numeApp}</span>
-          </div>
+      <div className="main-content">
+        {paginaCurenta === 'Acasa' && <EcranAcasa />}
+        {paginaCurenta === 'Despre' && <EcranDespre />}
+        {paginaCurenta === 'Echipa' && <EcranEchipa />}
+      </div>
 
-          <div className="main-content">
-            {paginaCurenta === 'Acasa' && <EcranAcasa />}
-            {paginaCurenta === 'Despre' && <EcranDespre onSecretClick={() => setShowTetris(true)} />}
-            {paginaCurenta === 'Echipa' && <EcranEchipa />}
-          </div>
-
-          <div className="nav-bar-container">
-            <div className="nav-bar">
-              <TabButton 
-                nume="Acasă" 
-                IconActiv={IoHome} IconInactiv={IoHomeOutline} 
-                set={setPaginaCurenta} activ={paginaCurenta === 'Acasa'} tinta="Acasa" 
-              />
-              <TabButton 
-                nume="Echipă" 
-                IconActiv={IoPeople} IconInactiv={IoPeopleOutline} 
-                set={setPaginaCurenta} activ={paginaCurenta === 'Echipa'} tinta="Echipa" 
-              />
-              <TabButton 
-                nume="Despre" 
-                IconActiv={IoInformationCircle} IconInactiv={IoInformationCircleOutline} 
-                set={setPaginaCurenta} activ={paginaCurenta === 'Despre'} tinta="Despre" 
-              />
-            </div>
-          </div>
+      <div className="nav-bar-container">
+        <div className="nav-bar">
+          <TabButton 
+            nume="Acasă" 
+            IconActiv={IoHome} IconInactiv={IoHomeOutline} 
+            set={setPaginaCurenta} activ={paginaCurenta === 'Acasa'} tinta="Acasa" 
+          />
+          <TabButton 
+            nume="Echipă" 
+            IconActiv={IoPeople} IconInactiv={IoPeopleOutline} 
+            set={setPaginaCurenta} activ={paginaCurenta === 'Echipa'} tinta="Echipa" 
+          />
+          <TabButton 
+            nume="Despre" 
+            IconActiv={IoInformationCircle} IconInactiv={IoInformationCircleOutline} 
+            set={setPaginaCurenta} activ={paginaCurenta === 'Despre'} tinta="Despre" 
+          />
+        </div>
       </div>
     </div>
   );
