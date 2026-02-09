@@ -89,24 +89,32 @@ html, body {
 .text-loc { color: #8899a6; font-size: 13px; margin-bottom: 8px; font-style: italic; }
 .card-descriere { color: #445566; font-size: 14px; line-height: 1.4; }
 
+/* === MODIFICARE IMAGINI PROIECTE (FULL CHENAR) === */
 .proiect-card { background: white; border-radius: 16px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
 .proiect-card:active { transform: scale(0.98); }
+
 .proiect-imagine { 
-  width: 100%; height: 160px; 
-  object-fit: contain; /* Păstrat pentru a se vedea toată grafica */
-  background: white;
+  width: 100%; 
+  height: 160px; 
+  object-fit: cover; /* <--- ASTA UMPLE TOT (Full Chenar) */
+  object-position: center;
+  background: #eee;
 }
+
 .proiect-content { padding: 15px; }
 .proiect-titlu { font-size: 18px; font-weight: bold; color: var(--text-titlu); margin-bottom: 5px; }
 .proiect-descriere { font-size: 14px; color: #556677; line-height: 1.4; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .read-more-row { display: flex; align-items: center; justify-content: flex-end; color: var(--accent); font-weight: bold; font-size: 12px; gap: 5px; }
 
 .detail-view { padding: 0 !important; padding-bottom: 140px !important; }
+
 .proiect-detail-image { 
-  width: 100%; height: 250px; 
-  object-fit: contain; 
-  background: white; 
+  width: 100%; 
+  height: 250px; 
+  object-fit: cover; /* <--- ASTA UMPLE TOT SI IN PAGINA DE DETALIU */
+  object-position: center;
 }
+
 .proiect-detail-container { padding: 20px; background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; margin-top: -30px; position: relative; min-height: 500px; }
 .back-button-detail { position: absolute; top: -220px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
 .proiect-detail-title { font-size: 24px; font-weight: bold; color: var(--text-titlu); margin: 10px 0; }
