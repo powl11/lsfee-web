@@ -3,7 +3,6 @@ import { IoArrowBack, IoPlay, IoPause, IoCaretBack, IoCaretForward, IoCaretDown,
 import './index.css';
 
 const WIDTH = 10;
-const HEIGHT = 20;
 
 // FORMELE (TETROMINOES)
 const lTetromino = [
@@ -39,15 +38,15 @@ const iTetromino = [
 
 const THE_TETROMINOES = [lTetromino, zTetromino, tTetromino, oTetromino, iTetromino];
 
-// --- HOOK PENTRU APASARE LUNGA (CONTROLS) ---
-function useLongPress(callback = () => {}, ms = 100) {
+// --- HOOK PENTRU APASARE LUNGA (DOAR PENTRU BUTONUL JOS) ---
+function useLongPress(callback = () => {}, ms = 50) {
   const [startLongPress, setStartLongPress] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
     if (startLongPress) {
-      callback(); // Executa imediat o data
-      timerRef.current = setInterval(callback, ms); // Apoi repeta
+      callback(); 
+      timerRef.current = setInterval(callback, ms);
     } else {
       clearInterval(timerRef.current);
     }
@@ -58,7 +57,10 @@ function useLongPress(callback = () => {}, ms = 100) {
     onMouseDown: () => setStartLongPress(true),
     onMouseUp: () => setStartLongPress(false),
     onMouseLeave: () => setStartLongPress(false),
-    onTouchStart: (e) => { e.preventDefault(); setStartLongPress(true); }, // Prevent scroll pe mobil
+    onTouchStart: (e) => { 
+        if(e.cancelable) e.preventDefault(); 
+        setStartLongPress(true); 
+    },
     onTouchEnd: () => setStartLongPress(false),
   };
 }
@@ -69,16 +71,15 @@ export default function TetrisGame({ onBack }) {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   
-  // Starea jocului tinuta in Ref pentru performanta maxima (fara re-render la fiecare frame)
+  // Starea jocului tinuta in Ref pentru performanta maxima
   const game = useRef({
     timerId: null,
-    squares: [], // Array de div-uri DOM
+    squares: [], 
     currentPosition: 4,
     currentRotation: 0,
     random: 0,
     current: [],
-    nextRandom: 0,
-    isFrozen: false // Flag anti-bug podea
+    isFrozen: false
   });
 
   // --- INITIALIZARE ---
@@ -86,7 +87,6 @@ export default function TetrisGame({ onBack }) {
     const grid = gridRef.current;
     if (!grid) return;
     
-    // Resetare Grid
     grid.innerHTML = ''; 
     const squares = [];
     
@@ -107,14 +107,13 @@ export default function TetrisGame({ onBack }) {
 
     game.current.squares = squares;
     
-    // Start joc
     startNewPiece();
     game.current.timerId = setInterval(moveDown, 800);
 
     return () => clearInterval(game.current.timerId);
   }, []);
 
-  // --- LOGICA DE START PIESA NOUA ---
+  // --- LOGICA JOCULUI ---
   const startNewPiece = () => {
     game.current.random = Math.floor(Math.random() * THE_TETROMINOES.length);
     game.current.currentRotation = 0;
@@ -122,7 +121,6 @@ export default function TetrisGame({ onBack }) {
     game.current.currentPosition = 4;
     game.current.isFrozen = false;
     
-    // Verificare Game Over la spawn
     if (checkCollision(0, 0)) {
       setIsGameOver(true);
       clearInterval(game.current.timerId);
@@ -131,7 +129,6 @@ export default function TetrisGame({ onBack }) {
     }
   };
 
-  // --- DESENARE ---
   const draw = () => {
     const { current, currentPosition, squares } = game.current;
     current.forEach(index => {
@@ -151,24 +148,17 @@ export default function TetrisGame({ onBack }) {
   };
 
   // --- VERIFICARE COLIZIUNE (OPTIMIZATA) ---
-  // Verifica daca mutarea viitoare e valida
   const checkCollision = (moveOffset, rotationOffset = 0) => {
     const { currentPosition, currentRotation, random, squares } = game.current;
-    
-    // Calculam viitoarea forma
     let nextRotation = (currentRotation + rotationOffset) % 4;
     let nextPiece = THE_TETROMINOES[random][nextRotation];
     
-    // Verificam fiecare bloc al piesei
     return nextPiece.some(index => {
       let nextIndex = currentPosition + index + moveOffset;
-      // 1. E in afara gridului?
       if (!squares[nextIndex]) return true; 
-      // 2. E ocupat deja?
       if (squares[nextIndex].classList.contains('taken')) return true;
-      // 3. Verifica marginile (wrap-around bug) la stanga/dreapta
-      if (moveOffset === 1 && (currentPosition + index) % WIDTH === WIDTH - 1) return true; // Loveste dreapta
-      if (moveOffset === -1 && (currentPosition + index) % WIDTH === 0) return true; // Loveste stanga
+      if (moveOffset === 1 && (currentPosition + index) % WIDTH === WIDTH - 1) return true;
+      if (moveOffset === -1 && (currentPosition + index) % WIDTH === 0) return true;
       return false;
     });
   };
@@ -177,9 +167,8 @@ export default function TetrisGame({ onBack }) {
   const moveDown = useCallback(() => {
     if (game.current.isFrozen || isGameOver || isPaused) return;
 
-    // Verificam coliziunea INAINTE sa mutam
     if (checkCollision(WIDTH)) {
-      freeze(); // Daca jos e ocupat, ingheata
+      freeze();
     } else {
       undraw();
       game.current.currentPosition += WIDTH;
@@ -212,12 +201,11 @@ export default function TetrisGame({ onBack }) {
     const nextRotation = (currentRotation + 1) % 4;
     const nextPiece = THE_TETROMINOES[random][nextRotation];
     
-    // Verificari speciale pentru rotire la margini
     const isAtLeft = nextPiece.some(index => (currentPosition + index) % WIDTH === 0);
     const isAtRight = nextPiece.some(index => (currentPosition + index) % WIDTH === WIDTH - 1);
 
-    if (!(isAtLeft && isAtRight)) { // Previne "ruperea" piesei
-       if (!checkCollision(0, 1)) { // Verifica daca noua rotatie e valida
+    if (!(isAtLeft && isAtRight)) {
+       if (!checkCollision(0, 1)) {
           undraw();
           game.current.currentRotation = nextRotation;
           game.current.current = nextPiece;
@@ -226,17 +214,14 @@ export default function TetrisGame({ onBack }) {
     }
   }, [isGameOver, isPaused]);
 
-  // --- MECANICA DE INGHETARE SI SCORE ---
   const freeze = () => {
-    if (game.current.isFrozen) return; // Previne dubla executie
+    if (game.current.isFrozen) return;
     game.current.isFrozen = true;
 
     const { current, currentPosition, squares } = game.current;
     
-    // 1. Transforma piesa in blocuri statice
     current.forEach(index => squares[currentPosition + index].classList.add('taken'));
     
-    // 2. Verifica Linii Complete
     let linesCleared = 0;
     for (let i = 0; i < 199; i += WIDTH) {
       const row = [i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9];
@@ -249,24 +234,19 @@ export default function TetrisGame({ onBack }) {
         });
         const squaresRemoved = squares.splice(i, WIDTH);
         game.current.squares = squaresRemoved.concat(squares);
-        // Re-atasam elementele in DOM in ordinea noua
         game.current.squares.forEach(cell => gridRef.current.appendChild(cell));
       }
     }
 
-    // 3. Update Scorer
     if (linesCleared > 0) {
       const bonus = [0, 100, 300, 500, 800];
       setScore(prev => prev + bonus[linesCleared]);
     } else {
-        setScore(prev => prev + 10); // Puncte pt piesa pusa
+        setScore(prev => prev + 10);
     }
-
-    // 4. Piesa noua
     startNewPiece();
   };
 
-  // --- PAUZA ---
   const handlePause = () => {
     if (isPaused) {
       game.current.timerId = setInterval(moveDown, 800);
@@ -278,14 +258,12 @@ export default function TetrisGame({ onBack }) {
   };
 
   const handleRestart = () => {
-     window.location.reload(); // Cea mai sigura metoda de restart complet
+     window.location.reload();
   };
 
-  // --- CONTROALE CU LONG PRESS ---
-  const downPress = useLongPress(moveDown, 50);   // Foarte rapid (50ms)
-  const leftPress = useLongPress(moveLeft, 120);  // Rapid
-  const rightPress = useLongPress(moveRight, 120); // Rapid
-  const upPress = useLongPress(rotate, 250);      // Mai lent la rotire
+  // --- CONTROALE ---
+  // Doar JOS are useLongPress (ca sa curga repede)
+  const downPress = useLongPress(moveDown, 60);
 
   return (
     <div className="tetris-container fade-in">
@@ -307,21 +285,20 @@ export default function TetrisGame({ onBack }) {
       </div>
 
       <div className="controls-area">
-         {/* D-PAD cu SUPPORT PENTRU APASARE LUNGA */}
          <div className="d-pad-grid">
             <div></div>
-            {/* ROTIRE */}
-            <button className="ctrl-btn rotate-btn" {...upPress}><IoCaretUp /></button>
+            {/* ROTIRE: Folosim onPointerDown pentru reactie rapida (tap) */}
+            <button className="ctrl-btn rotate-btn" onPointerDown={rotate}><IoCaretUp /></button>
             <div></div>
             
-            {/* STANGA */}
-            <button className="ctrl-btn" {...leftPress}><IoCaretBack /></button>
+            {/* STANGA: onPointerDown (tap) */}
+            <button className="ctrl-btn" onPointerDown={moveLeft}><IoCaretBack /></button>
             
-            {/* JOS (FAST DROP) */}
+            {/* JOS: Long Press Activat (Hold) */}
             <button className="ctrl-btn" {...downPress}><IoCaretDown /></button>
             
-            {/* DREAPTA */}
-            <button className="ctrl-btn" {...rightPress}><IoCaretForward /></button>
+            {/* DREAPTA: onPointerDown (tap) */}
+            <button className="ctrl-btn" onPointerDown={moveRight}><IoCaretForward /></button>
          </div>
 
          <div className="action-row">
